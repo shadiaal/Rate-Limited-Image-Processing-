@@ -24,39 +24,7 @@ namespace ImageProcessingApi.Middleware
             _intervalSeconds = int.Parse(config["RateLimiting:IntervalInSeconds"]);
         }
 
-        public async Task InvokeAsync(HttpContext context)
-        {
-            // Extract the API key from the request headers
-            var key = context.Request.Headers["X-Api-Key"].ToString();
-
-            // Capture the current UTC timestamp
-            var now = DateTime.UtcNow;
-
-            // Get the list of timestamps for this key, or create a new one if it doesn’t exist
-
-            // Lock the list to make it thread-safe
-            lock (requests)
-            {
-                // Remove timestamps older than the allowed interval
-               
-
-                // Check if the number of recent requests exceeds the limit
-                if (requests.Count >= _limit)
-                {
-                    // Respond with HTTP 429 Too Many Requests
 
 
-                    // Tell the client how long to wait before retrying
-                   // context.Response.WriteAsync("Rate limit exceeded.");
-
-
-                    return; // End the request here
-                }
-
-                // Add the current request time to the list
-                requests.Add(now);
-            }
-            await _next(context);
-        }
-    }
+	}
 }

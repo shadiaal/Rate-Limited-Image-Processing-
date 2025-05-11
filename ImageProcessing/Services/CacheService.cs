@@ -10,18 +10,22 @@ namespace ImageProcessingApi.Services
 
     public class CacheService : ICacheService
     {
-        // Creates a thread-safe dictionary to store cached items,
-        // where the key is a string (e.g., image hash + filter) and the value is the processed image (as a byte array).
+        
         private readonly ConcurrentDictionary<string, byte[]> _cache = new();
+		public byte[] Get(string key)
+		{
+			_cache.TryGetValue(key, out var data);
+			return data;
+		}
+
+		public void Set(string key, byte[] data)
+		{
+			_cache[key] = data;
+		}
 
 
-        // Attempts to retrieve a cached item by key.
-        // If the key exists, returns the byte array; otherwise, returns null.
+	
 
 
-
-        // Stores or updates a cached item in the dictionary with the given key and byte array value.
-       
-
-    }
+	}
 }

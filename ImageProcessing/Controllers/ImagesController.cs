@@ -21,26 +21,32 @@ namespace ImageProcessingApi.Controllers
             _cacheService = cacheService;
         }
 
-        [HttpPost("process")]
-        public async Task<IActionResult> ProcessImage([FromQuery] string filter, IFormFile image)
-        {
-            // Check if the uploaded image is null or empty
-            // Copy the uploaded image stream into a memory stream to access its byte array
-            // Generate a unique cache key based on the image content and the selected filter
-            var cacheKey = ComputeHash(imageBytes, filter);
-            // Check if a processed version of this image + filter is already in the cache
-            // If found in cache, return the cached image with "image/png" content type
+	
+		[HttpPost("process")]
+		public async Task<IActionResult> ProcessImage([FromQuery] string filter, IFormFile image)
+		{
+			if (image == null || image.Length == 0)
+				return BadRequest("Image file is required.");
 
+			using var ms = new MemoryStream();
+			await image.CopyToAsync(ms);
+			var imageBytes = ms.ToArray();
 
-            // Process the image using the selected filter
-            var processedImage = _imageService.ApplyFilter(imageBytes, filter);
-            // Store the processed image in cache using the generated cache key
-            // Return the processed image in the response with the "image/png" content type
-            return File(processedImage, "image/png");
+			var cacheKey = ComputeHash(imageBytes, filter);
 
-        }
+			var cached = _cacheService.Get(cacheKey);
+			if (cached != null)
+			{
+				return File(cached, "image/png");
+			}
 
-        private static string ComputeHash(byte[] image, string filter)
+			var processedImage = _imageService.ApplyFilter(imageBytes, filter);
+			_cacheService.Set(cacheKey, processedImage);
+
+			return File(processedImage, "image/png");
+		}
+
+		private static string ComputeHash(byte[] image, string filter)
         {
             using var sha = SHA256.Create();
             var inputBytes = image.Concat(Encoding.UTF8.GetBytes(filter)).ToArray();

@@ -13,36 +13,36 @@ namespace ImageProcessingApi.Middleware
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context)
-        {
-            // Get the requested path from the incoming HTTP request
-            var path = context.Request.Path.Value;
+		
+		public async Task InvokeAsync(HttpContext context)
+		{
+			var path = context.Request.Path.Value;
 
-            // Bypass static files like index.html, CSS, JS, etc.
-            if (path != null && (path.StartsWith("/index.html") ||
-                                 path.StartsWith("/css") ||
-                                 path.StartsWith("/js") ||
-                                 path.StartsWith("/images") ||
-                                 path.StartsWith("/favicon.ico") ||
-                                 path.StartsWith("/api/apikeys/generate")))
-            {
-                await _next(context);
-                return;
-            }
+			// Allow unauthenticated access to static files and API key generation
+			if (path != null && (
+				path.StartsWith("/index.html") ||
+				path.StartsWith("/css") ||
+				path.StartsWith("/js") ||
+				path.StartsWith("/images") ||
+				path.StartsWith("/favicon.ico") ||
+				path.StartsWith("/api/apikeys/generate")))
+			{
+				await _next(context);
+				return;
+			}
 
-            // For other requests, check if the X-Api-Key header exists and is valid
-            // Unauthorized
-            //"Invalid or missing API Key."
-            // Stop further processing
+			var apiKey = context.Request.Headers["X-Api-Key"].ToString();
+			if (string.IsNullOrWhiteSpace(apiKey) || !ApiKeysController.IsValidApiKey(apiKey))
+			{
+				context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+				await context.Response.WriteAsync("Invalid or missing API Key.");
+				return;
+			}
+
+			await _next(context);
+		}
 
 
-
-
-            // If the API key is valid, allow the request to continue through the middleware pipeline
-            await _next(context);
-        }
-
-    }
+	}
 }
 
-}
